@@ -1,11 +1,16 @@
+// Helper
+fn read_input (_input: &str) -> i32 {
+    0
+}
+
 // Part1
-pub fn part1 (_input: &str) -> String {
-    format!("{}", _input)
+pub fn part1 (input: &str) -> String {
+    format!("{}", read_input(input))
 }
 
 // Part2
-pub fn part2 (_input: &str) -> String {
-    format!("{}", _input)
+pub fn part2 (input: &str) -> String {
+    format!("{}", read_input(input))
 }
 
 // Tests
@@ -13,11 +18,11 @@ pub fn part2 (_input: &str) -> String {
 mod tests {
     #[test]
     fn day17_part1 () {
-        assert_eq!(0, 0);
+        assert_eq!(super::part1("0"), "0");
     }
 
     #[test]
     fn day17_part2 () {
-        assert_eq!(0, 0);
+        assert_eq!(super::part2("0"), "0");
     }
 }
