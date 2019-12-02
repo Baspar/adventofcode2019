@@ -2,6 +2,9 @@
 fn read_input (input: &str) -> Vec<usize> {
     input
         .trim()
+        .lines()
+        // .collect::<Vec<&str>>()
+        .join("")
         .split(",")
         .map(|s: &str| s.parse().unwrap())
         .collect()
