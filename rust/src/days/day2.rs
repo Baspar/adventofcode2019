@@ -42,8 +42,8 @@ pub fn part1 (input: &str) -> String {
 // Part2
 pub fn part2 (input: &str) -> String {
     let expected_output = 19690720;
-    for noun in 0..99 {
-        for verb in 0..99 {
+    for noun in 0..100 {
+        for verb in 0..100 {
             let mut opcodes = read_input(input);
             main_loop(noun, verb, &mut opcodes);
             let output = opcodes[0];
