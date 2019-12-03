@@ -69,19 +69,20 @@ pub fn part1 (input: &str) -> String {
     let min = crossings
         .into_iter()
         .map(|(pos, _)| pos.im.abs() + pos.re.abs())
-        .fold(100000, |a, b| if a < b { a } else { b });
+        .fold(100000, |a, b| a.min(b));
     format!("{}", min)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
+
     let lines = read_input(input);
     let crossings = draw_lines(lines);
 
     let min = crossings
         .into_iter()
         .map(|(_, steps)| steps)
-        .fold(100000, |a, b| if a < b { a } else { b });
+        .fold(100000, |a, b| a.min(b));
     format!("{}", min)
 }
 
