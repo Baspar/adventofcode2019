@@ -72,8 +72,43 @@ pub fn part1 (input: &str) -> String {
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    let _lines = read_input(input);
-    format!("{}", 0)
+    let lines = read_input(input);
+    let mut positions: HashMap<Complex<i32>, HashMap<i32, i32>> = HashMap::new();
+    let mut cross: Vec<(Complex<i32>, i32)> = Vec::new();
+
+    let mut i = 0;
+    for line in lines {
+        let mut pos: Complex<i32> = Complex::new(0, 0);
+        let mut step = 0;
+        for instruction in line {
+            let dir = instruction.dir;
+            let length = instruction.length;
+            for _ in 1..=length {
+                step += 1;
+                pos += dir;
+                match positions.get(&pos) {
+                    Some(past_positions) => {
+                        if past_positions.get(&i).is_none() {
+                            let past_step = past_positions.get(&(i-1)).unwrap();
+                            cross.push((pos, step + past_step))
+                        }
+                    },
+                    _ => {
+                        let mut v = HashMap::new();
+                        v.insert(i, step);
+                        positions.insert(pos, v);
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+
+    let min = cross
+        .into_iter()
+        .map(|(_, steps)| steps)
+        .fold(100000, |a, b| if a < b { a } else { b });
+    format!("{}", min)
 }
 
 // Tests
@@ -91,6 +126,11 @@ U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"), "135");
 
     #[test]
     fn day3_part2 () {
-        assert_eq!(super::part2("0"), "0");
+        assert_eq!(super::part2("R8,U5,L5,D3
+U7,R6,D4,L4"), "30");
+        assert_eq!(super::part2("R75,D30,R83,U83,L12,D49,R71,U7,L72
+U62,R66,U55,R34,D71,R55,D58,R83"), "610");
+        assert_eq!(super::part2("R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51
+U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"), "410");
     }
 }
