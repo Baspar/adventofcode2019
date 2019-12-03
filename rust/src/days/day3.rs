@@ -33,7 +33,7 @@ fn read_input (input: &str) -> Vec<Vec<Instruction>> {
 }
 fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
     let mut positions: HashMap<Complex<i32>, (i32, i32)> = HashMap::new();
-    let mut cross: Vec<(Complex<i32>, i32)> = Vec::new();
+    let mut crossings: Vec<(Complex<i32>, i32)> = Vec::new();
 
     for (line_id, line) in lines.iter().enumerate() {
         let mut pos: Complex<i32> = Complex::new(0, 0);
@@ -47,7 +47,7 @@ fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
                 match positions.get(&pos) {
                     Some((past_line_id, past_step)) => {
                         if *past_line_id != line_id as i32 {
-                            cross.push((pos, step + past_step))
+                            crossings.push((pos, step + past_step))
                         }
                     },
                     _ => {
@@ -58,15 +58,15 @@ fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
         }
     }
 
-    return cross;
+    return crossings;
 }
 
 // Part1
 pub fn part1 (input: &str) -> String {
     let lines = read_input(input);
-    let cross = draw_lines(lines);
+    let crossings = draw_lines(lines);
 
-    let min = cross
+    let min = crossings
         .into_iter()
         .map(|(pos, _)| pos.im.abs() + pos.re.abs())
         .fold(100000, |a, b| if a < b { a } else { b });
@@ -76,9 +76,9 @@ pub fn part1 (input: &str) -> String {
 // Part2
 pub fn part2 (input: &str) -> String {
     let lines = read_input(input);
-    let cross = draw_lines(lines);
+    let crossings = draw_lines(lines);
 
-    let min = cross
+    let min = crossings
         .into_iter()
         .map(|(_, steps)| steps)
         .fold(100000, |a, b| if a < b { a } else { b });
