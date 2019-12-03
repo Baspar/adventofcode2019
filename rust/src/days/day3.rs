@@ -32,26 +32,24 @@ fn read_input (input: &str) -> Vec<Vec<Instruction>> {
         .collect()
 }
 fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
-    let mut positions: HashMap<Complex<i32>, (i32, i32)> = HashMap::new();
+    let mut already_visited: HashMap<Complex<i32>, (i32, i32)> = HashMap::new();
     let mut crossings: Vec<(Complex<i32>, i32)> = Vec::new();
 
     for (line_id, line) in lines.iter().enumerate() {
         let mut pos: Complex<i32> = Complex::new(0, 0);
         let mut step = 0;
-        for instruction in line {
-            let dir = instruction.dir;
-            let length = instruction.length;
-            for _ in 1..=length {
+        for Instruction {dir, length} in line {
+            for _ in 1..=*length {
                 step += 1;
                 pos += dir;
-                match positions.get(&pos) {
+                match already_visited.get(&pos) {
                     Some((past_line_id, past_step)) => {
                         if *past_line_id != line_id as i32 {
                             crossings.push((pos, step + past_step))
                         }
                     },
                     _ => {
-                        positions.insert(pos, (line_id as i32, step));
+                        already_visited.insert(pos, (line_id as i32, step));
                     }
                 }
             }
