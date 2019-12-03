@@ -1,5 +1,5 @@
 use num::Complex;
-use std::collections::{HashMap,HashSet};
+use std::collections::HashMap;
 
 // Helper
 struct Instruction {
@@ -31,53 +31,11 @@ fn read_input (input: &str) -> Vec<Vec<Instruction>> {
         )
         .collect()
 }
-
-// Part1
-pub fn part1 (input: &str) -> String {
-    let lines = read_input(input);
-    let mut positions: HashMap<Complex<i32>, HashSet<i32>> = HashMap::new();
-    let mut cross: Vec<Complex<i32>> = Vec::new();
-
-    let mut i = 0;
-    for line in lines {
-        let mut pos: Complex<i32> = Complex::new(0, 0);
-        for instruction in line {
-            let dir = instruction.dir;
-            let length = instruction.length;
-            for _ in 1..=length {
-                pos += dir;
-                match positions.get(&pos) {
-                    Some(past_positions) => {
-                        if !past_positions.contains(&i) {
-                            cross.push(pos)
-                        }
-                    },
-                    _ => {
-                        let mut v = HashSet::new();
-                        v.insert(i);
-                        positions.insert(pos, v);
-                    }
-                }
-            }
-        }
-        i += 1;
-    }
-
-    let min = cross
-        .into_iter()
-        .map(|c: Complex<i32>| c.im.abs() + c.re.abs())
-        .fold(100000, |a, b| if a < b { a } else { b });
-    format!("{}", min)
-}
-
-// Part2
-pub fn part2 (input: &str) -> String {
-    let lines = read_input(input);
-    let mut positions: HashMap<Complex<i32>, HashMap<i32, i32>> = HashMap::new();
+fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
+    let mut positions: HashMap<Complex<i32>, (i32, i32)> = HashMap::new();
     let mut cross: Vec<(Complex<i32>, i32)> = Vec::new();
 
-    let mut i = 0;
-    for line in lines {
+    for (line_id, line) in lines.iter().enumerate() {
         let mut pos: Complex<i32> = Complex::new(0, 0);
         let mut step = 0;
         for instruction in line {
@@ -87,22 +45,38 @@ pub fn part2 (input: &str) -> String {
                 step += 1;
                 pos += dir;
                 match positions.get(&pos) {
-                    Some(past_positions) => {
-                        if past_positions.get(&i).is_none() {
-                            let past_step = past_positions.get(&(i-1)).unwrap();
+                    Some((past_line_id, past_step)) => {
+                        if *past_line_id != line_id as i32 {
                             cross.push((pos, step + past_step))
                         }
                     },
                     _ => {
-                        let mut v = HashMap::new();
-                        v.insert(i, step);
-                        positions.insert(pos, v);
+                        positions.insert(pos, (line_id as i32, step));
                     }
                 }
             }
         }
-        i += 1;
     }
+
+    return cross;
+}
+
+// Part1
+pub fn part1 (input: &str) -> String {
+    let lines = read_input(input);
+    let cross = draw_lines(lines);
+
+    let min = cross
+        .into_iter()
+        .map(|(pos, _)| pos.im.abs() + pos.re.abs())
+        .fold(100000, |a, b| if a < b { a } else { b });
+    format!("{}", min)
+}
+
+// Part2
+pub fn part2 (input: &str) -> String {
+    let lines = read_input(input);
+    let cross = draw_lines(lines);
 
     let min = cross
         .into_iter()
