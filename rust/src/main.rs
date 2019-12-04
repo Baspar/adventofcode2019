@@ -2,6 +2,7 @@ use std::env;
 use std::process;
 use std::fs;
 use regex::Regex;
+use std::time::Instant;
 
 mod days;
 
@@ -37,6 +38,8 @@ fn main() {
 
     println!("{}", input);
 
+    let start = Instant::now();
+
     // Part1
     println!("Part1:");
     let result_part1 = days::part1(day, &input);
@@ -46,4 +49,6 @@ fn main() {
     println!("Part2:");
     let result_part2 = days::part2(day, &input);
     println!("{}", result_part2);
+
+    println!("Time elapsed: {:?}", start.elapsed());
 }
