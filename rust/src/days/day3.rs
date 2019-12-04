@@ -1,5 +1,5 @@
 use num::Complex;
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 
 // Helper
 struct Instruction {
@@ -31,55 +31,53 @@ fn read_input (input: &str) -> Vec<Vec<Instruction>> {
         )
         .collect()
 }
-fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<(Complex<i32>, i32)> {
-    let mut already_visited: HashMap<Complex<i32>, (i32, i32)> = HashMap::new();
-    let mut crossings: Vec<(Complex<i32>, i32)> = Vec::new();
-
-    for (line_id, line) in lines.iter().enumerate() {
-        let mut pos: Complex<i32> = Complex::new(0, 0);
-        let mut step = 0;
-        for Instruction {dir, length} in line {
-            for _ in 1..=*length {
-                step += 1;
-                pos += dir;
-                match already_visited.get(&pos) {
-                    Some((past_line_id, past_step)) => {
-                        if *past_line_id != line_id as i32 {
-                            crossings.push((pos, step + past_step))
-                        }
-                    },
-                    _ => {
-                        already_visited.insert(pos, (line_id as i32, step));
+fn draw_lines (lines: Vec<Vec<Instruction>>) -> Vec<HashMap<Complex<i32>, i32>> {
+    lines
+        .iter()
+        .map(|line| {
+            let mut visited: HashMap<Complex<i32>, i32> = HashMap::new();
+            let mut pos: Complex<i32> = Complex::new(0, 0);
+            let mut step = 0;
+            for Instruction {dir, length} in line {
+                for _ in 1..=*length {
+                    step += 1;
+                    pos += dir;
+                    if visited.get(&pos).is_none() {
+                        visited.insert(pos, step);
                     }
                 }
             }
-        }
-    }
-
-    return crossings;
+            visited
+        })
+        .collect()
 }
 
 // Part1
 pub fn part1 (input: &str) -> String {
     let lines = read_input(input);
-    let crossings = draw_lines(lines);
-
-    let min = crossings
-        .into_iter()
-        .map(|(pos, _)| pos.im.abs() + pos.re.abs())
+    let all_positions = draw_lines(lines);
+    let line1 = all_positions.get(0).unwrap();
+    let line2 = all_positions.get(1).unwrap();
+    let positions1: HashSet<Complex<i32>> = line1.keys().map(|x| *x).collect();
+    let positions2: HashSet<Complex<i32>> = line2.keys().map(|x| *x).collect();
+    let min = positions1
+        .intersection(&positions2)
+        .map(|pos| pos.im.abs() + pos.re.abs())
         .fold(100000, |a, b| a.min(b));
     format!("{}", min)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
-
     let lines = read_input(input);
-    let crossings = draw_lines(lines);
-
-    let min = crossings
-        .into_iter()
-        .map(|(_, steps)| steps)
+    let all_positions = draw_lines(lines);
+    let line1 = all_positions.get(0).unwrap();
+    let line2 = all_positions.get(1).unwrap();
+    let positions1: HashSet<Complex<i32>> = line1.keys().map(|x| *x).collect();
+    let positions2: HashSet<Complex<i32>> = line2.keys().map(|x| *x).collect();
+    let min = positions1
+        .intersection(&positions2)
+        .map(|pos| line1.get(pos).unwrap() + line2.get(pos).unwrap())
         .fold(100000, |a, b| a.min(b));
     format!("{}", min)
 }
