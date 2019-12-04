@@ -35,20 +35,25 @@ fn main() {
     } else {
         &file_input
     };
+    println!("{}\n", input);
 
-    println!("{}", input);
-
-    let start = Instant::now();
 
     // Part1
-    println!("Part1:");
+    print!("Part1: ");
+    let start1 = Instant::now();
     let result_part1 = days::part1(day, &input);
-    println!("{}", result_part1);
+    let duration1 = start1.elapsed();
+    println!("({:?})", duration1);
+    println!("{}\n", result_part1);
+
 
     // Part2
-    println!("Part2:");
+    print!("Part2: ");
+    let start2 = Instant::now();
     let result_part2 = days::part2(day, &input);
-    println!("{}", result_part2);
+    let duration2 = start2.elapsed();
+    println!("({:?})", duration2);
+    println!("{}\n", result_part2);
 
-    println!("Time elapsed: {:?}", start.elapsed());
+    println!("Time elapsed: {:?}", duration1 + duration2);
 }

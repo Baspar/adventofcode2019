@@ -108,7 +108,7 @@ mod tests {
     fn day4_part1 () {
         assert_eq!(super::part1("111111-111111"), "1");
         assert_eq!(super::part1("223450-223450"), "0");
-        // assert_eq!(super::part1("123789-123789"), "0");
+        assert_eq!(super::part1("123789-123789"), "0");
     }
 
     #[test]
