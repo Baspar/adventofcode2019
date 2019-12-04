@@ -13,15 +13,11 @@ fn is_valid(n: i64) -> bool {
     let mut two_same = false;
     let mut never_decrease = true;
 
-    for i in 1..s.len() {
-        let a = chars.get(i - 1).unwrap();
-        let b = chars.get(i).unwrap();
-        if a == b {
-            two_same = true;
-        }
-        if a > b {
-            never_decrease = false;
-        }
+    for i in 0..s.len()-1 {
+        let a = chars[i];
+        let b = chars[i + 1];
+        two_same |= a == b;
+        never_decrease &= a > b;
     }
 
     two_same && never_decrease
@@ -32,23 +28,19 @@ fn is_valid_part2(n: i64) -> bool {
 
     let mut two_same = false;
     let mut never_decrease = true;
-    let mut current = (chars.get(0).unwrap(), 1);
+    let mut current_count = 1;
 
-    for i in 1..s.len() {
-        let (current_char, current_count) = current;
-        let a = chars.get(i - 1).unwrap();
-        let b = chars.get(i).unwrap();
-        if b == current_char {
-            current = (current_char, current_count + 1)
+    for i in 0..s.len()-1 {
+        let a = chars[i];
+        let b = chars[i + 1];
+        never_decrease &= a > b;
+        if b == a {
+            current_count += 1
         } else {
             if current_count == 2 { two_same = true }
-            current = (b, 1)
-        }
-        if a > b {
-            never_decrease = false;
+            current_count = 1
         }
     }
-    let (_, current_count) = current;
     if current_count == 2 { two_same = true }
 
     two_same && never_decrease
