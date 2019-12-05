@@ -9,7 +9,7 @@ fn read_input (input: &str) -> Vec<i64> {
         .map(|s: &str| s.parse().unwrap())
         .collect()
 }
-fn main_loop(mut opcodes: Vec<i64>) -> i64 {
+fn main_loop(mut opcodes: Vec<i64>, system_id: i64) -> i64 {
     let mut pos = 0;
     let mut out = None;
     loop {
@@ -42,7 +42,7 @@ fn main_loop(mut opcodes: Vec<i64>) -> i64 {
             },
             3 => { // Input
                 let a = opcodes[pos + 1];
-                opcodes[a as usize] = 1; // Hardcode 1
+                opcodes[a as usize] = system_id;
                 pos += 2;
             },
             4 => { // Output
@@ -50,6 +50,54 @@ fn main_loop(mut opcodes: Vec<i64>) -> i64 {
                 let value_1 = if mode_param_1 == 0 { opcodes[a as usize] } else { a };
                 out = Some(value_1);
                 pos += 2;
+            },
+            5 => { //jump-if-true
+                let [a, b] = [
+                    opcodes[pos + 1],
+                    opcodes[pos + 2]
+                ];
+                let value_1 = if mode_param_1 == 0 { opcodes[a as usize] } else { a };
+                let value_2 = if mode_param_2 == 0 { opcodes[b as usize] } else { b };
+                if value_1 != 0 {
+                    pos = value_2 as usize;
+                } else {
+                    pos += 3;
+                }
+            },
+            6 => { //jump-if-false
+                let [a, b] = [
+                    opcodes[pos + 1],
+                    opcodes[pos + 2]
+                ];
+                let value_1 = if mode_param_1 == 0 { opcodes[a as usize] } else { a };
+                let value_2 = if mode_param_2 == 0 { opcodes[b as usize] } else { b };
+                if value_1 == 0 {
+                    pos = value_2 as usize;
+                } else {
+                    pos += 3;
+                }
+            },
+            7 => { //less-than
+                let [a, b, c] = [
+                    opcodes[pos + 1],
+                    opcodes[pos + 2],
+                    opcodes[pos + 3]
+                ];
+                let value_1 = if mode_param_1 == 0 { opcodes[a as usize] } else { a };
+                let value_2 = if mode_param_2 == 0 { opcodes[b as usize] } else { b };
+                opcodes[c as usize] = if value_1 < value_2 {1} else {0};
+                pos += 4;
+            },
+            8 => { //equals
+                let [a, b, c] = [
+                    opcodes[pos + 1],
+                    opcodes[pos + 2],
+                    opcodes[pos + 3]
+                ];
+                let value_1 = if mode_param_1 == 0 { opcodes[a as usize] } else { a };
+                let value_2 = if mode_param_2 == 0 { opcodes[b as usize] } else { b };
+                opcodes[c as usize] = if value_1 == value_2 {1} else {0};
+                pos += 4;
             },
             99 => { // Exit
                 break
@@ -65,23 +113,15 @@ fn main_loop(mut opcodes: Vec<i64>) -> i64 {
 // Part1
 pub fn part1 (input: &str) -> String {
     let opcodes = read_input(input);
-    let output = main_loop(opcodes);
+    let output = main_loop(opcodes, 1);
     format!("{}", output)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    let expected_output = 19690720;
     let opcodes = read_input(input);
-    for noun in 0..100 {
-        for verb in 0..100 {
-            let output = main_loop(opcodes.clone());
-            if expected_output == output {
-                return format!("noun = {}, verb = {}", noun, verb);
-            }
-        }
-    }
-    return format!("")
+    let output = main_loop(opcodes, 5);
+    format!("{}", output)
 }
 
 // Tests
@@ -89,7 +129,6 @@ pub fn part2 (input: &str) -> String {
 mod tests {
     #[test]
     fn day2_part1 () {
-        assert_eq!(super::main_loop(super::read_input("1,0,0,0,99"), 0, 0), 2);
     }
 
     #[test]
