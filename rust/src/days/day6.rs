@@ -3,40 +3,32 @@ use std::collections::{HashMap,HashSet,VecDeque};
 // Helper
 type Graph = HashMap<String, HashSet<String>>;
 fn read_input (input: &str) -> Graph {
-    let orbits: Vec<(String, String)>  = input
-        .lines()
-        .map(|l| {
-            let v: Vec<&str> = l.split(")").collect();
-            (String::from(v[0]), String::from(v[1]))
-        })
-        .collect();
-
     let mut graph = HashMap::new();
-    for (center, satellite) in orbits {
-        if graph.get(&center).is_none() {
-            graph.insert(center.clone(), HashSet::new());
-        }
-        graph.get_mut(&center).unwrap().insert(satellite);
+    for line in input.lines() {
+        let v: Vec<&str> = line.split(")").collect();
+        let center = String::from(v[0]);
+        let satellite = String::from(v[1]);
+        graph
+            .entry(center)
+            .or_insert(HashSet::new())
+            .insert(satellite);
     }
     graph
 }
 fn get_n_satellites_and_n_orbits (graph: &Graph, node: &String) -> (usize, usize) {
     let mut n_satellites = 1;
     let mut n_orbits = 0;
-    match graph.get(node) {
-        Some(satellites) => {
-            for satellite in satellites {
-                let (n_satellite_satellites, n_satellite_orbits) = get_n_satellites_and_n_orbits(graph, satellite);
-                n_satellites += n_satellite_satellites;
-                n_orbits += n_satellite_orbits + n_satellite_satellites;
-            }
-        },
-        _ => {}
+    if let Some(satellites) = graph.get(node) {
+        for satellite in satellites {
+            let (n_satellite_satellites, n_satellite_orbits) = get_n_satellites_and_n_orbits(graph, satellite);
+            n_satellites += n_satellite_satellites;
+            n_orbits += n_satellite_orbits + n_satellite_satellites;
+        }
     }
     (n_satellites, n_orbits)
 }
 fn path_to (graph: &Graph, root: &String, node: &String) -> Option<VecDeque<String>> {
-    if *root == *node {
+    if root == node {
         return Some(VecDeque::new())
     }
 
@@ -55,22 +47,25 @@ fn path_to (graph: &Graph, root: &String, node: &String) -> Option<VecDeque<Stri
 // Part1
 pub fn part1 (input: &str) -> String {
     let graph = read_input(input);
-    let (_, n_orbits) =  get_n_satellites_and_n_orbits(&graph, &String::from("COM"));
+    let (_, n_orbits) = get_n_satellites_and_n_orbits(&graph, &String::from("COM"));
     format!("{}", n_orbits)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
     let graph = read_input(input);
-    let mut path_to_santa = path_to(&graph, &String::from("COM"), &String::from("SAN")).unwrap();
-    let mut path_to_you = path_to(&graph, &String::from("COM"), &String::from("YOU")).unwrap();
+    let (
+        mut path_to_santa,
+        mut path_to_you
+    ) = (
+        path_to(&graph, &String::from("COM"), &String::from("SAN")).unwrap(),
+        path_to(&graph, &String::from("COM"), &String::from("YOU")).unwrap()
+    );
 
-    while path_to_you.front().unwrap() == path_to_santa.front().unwrap() {
+    while path_to_you.front() == path_to_santa.front() {
         path_to_santa.pop_front();
         path_to_you.pop_front();
     }
-    // println!("SAN: {:?}", path_to_santa);
-    // println!("YOU: {:?}", path_to_you);
     format!("{}", path_to_you.len() + path_to_santa.len())
 }
 
