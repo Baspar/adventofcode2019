@@ -1,5 +1,4 @@
-use std::collections::{HashMap, HashSet};
-
+use std::collections::{HashMap,HashSet,VecDeque};
 
 // Helper
 type Graph = HashMap<String, HashSet<String>>;
@@ -36,6 +35,22 @@ fn get_n_satellites_and_n_orbits (graph: &Graph, node: &String) -> (usize, usize
     }
     (n_satellites, n_orbits)
 }
+fn path_to (graph: &Graph, root: &String, node: &String) -> Option<VecDeque<String>> {
+    if *root == *node {
+        return Some(VecDeque::new())
+    }
+
+    if let Some(satellites) = graph.get(root) {
+        for sat in satellites {
+            if let Some(mut path) = path_to(graph, sat, node) {
+                path.push_front(root.clone());
+                return Some(path);
+            }
+        }
+    }
+
+    return None;
+}
 
 // Part1
 pub fn part1 (input: &str) -> String {
@@ -46,8 +61,17 @@ pub fn part1 (input: &str) -> String {
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    let _ = read_input(input);
-    format!("{:?}", 0)
+    let graph = read_input(input);
+    let mut path_to_santa = path_to(&graph, &String::from("COM"), &String::from("SAN")).unwrap();
+    let mut path_to_you = path_to(&graph, &String::from("COM"), &String::from("YOU")).unwrap();
+
+    while path_to_you.front().unwrap() == path_to_santa.front().unwrap() {
+        path_to_santa.pop_front();
+        path_to_you.pop_front();
+    }
+    // println!("SAN: {:?}", path_to_santa);
+    // println!("YOU: {:?}", path_to_you);
+    format!("{}", path_to_you.len() + path_to_santa.len())
 }
 
 // Tests
@@ -60,6 +84,6 @@ mod tests {
 
     #[test]
     fn day6_part2 () {
-        assert_eq!(super::part2("0"), "0");
+        assert_eq!(super::part2("COM)B\nB)C\nC)D\nD)E\nE)F\nB)G\nG)H\nD)I\nE)J\nJ)K\nK)L\nK)YOU\nI)SAN"), "4");
     }
 }
