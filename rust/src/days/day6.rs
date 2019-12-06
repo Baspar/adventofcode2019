@@ -54,13 +54,8 @@ pub fn part1 (input: &str) -> String {
 // Part2
 pub fn part2 (input: &str) -> String {
     let graph = read_input(input);
-    let (
-        mut path_to_santa,
-        mut path_to_you
-    ) = (
-        path_to(&graph, &String::from("COM"), &String::from("SAN")).unwrap(),
-        path_to(&graph, &String::from("COM"), &String::from("YOU")).unwrap()
-    );
+    let mut path_to_santa = path_to(&graph, &String::from("COM"), &String::from("SAN")).unwrap();
+    let mut path_to_you   = path_to(&graph, &String::from("COM"), &String::from("YOU")).unwrap();
 
     while path_to_you.front() == path_to_santa.front() {
         path_to_santa.pop_front();
