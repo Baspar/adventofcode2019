@@ -11,17 +11,22 @@ enum Status {
     Halt
 }
 
+#[derive(Debug)]
 struct Amplifier {
     pos: usize,
     opcodes: Opcodes,
     input: VecDeque<i64>
 }
 impl Amplifier {
-    fn new (opcodes: &Opcodes) -> Self {
+    fn new (opcodes: &Opcodes, inputs: Vec<i64>) -> Self {
+        let mut input = VecDeque::new();
+        for i in inputs {
+            input.push_back(i);
+        }
         Self {
             pos: 0,
             opcodes: opcodes.clone(),
-            input: VecDeque::new()
+            input
         }
     }
     fn add_input (self: &mut Self, i: i64) {
@@ -134,94 +139,6 @@ fn read_input (input: &str) -> Vec<i64> {
         .map(|s: &str| s.parse().unwrap())
         .collect()
 }
-fn main_loop(mut opcodes: Vec<i64>, phase_settings: i64, input: i64) -> i64 {
-    let mut pos = 0;
-    let mut out = None;
-    let mut first_input_done = false;
-    loop {
-        let mode = |shift: u32| {
-            opcodes[pos] / 10i64.pow(shift + 1) % 10
-        };
-        let get_param = |shift: u32, mode| -> i64 {
-            let value = opcodes[pos + shift as usize];
-            if mode == 0 {
-                return opcodes[value as usize];
-            } else {
-                return value;
-            }
-        };
-        match opcodes[pos] % 100 {
-            1 => { // Addition
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                opcodes[c as usize] = a + b;
-                pos += 4;
-            },
-            2 => { // Multiplication
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                opcodes[c as usize] = a * b;
-                pos += 4;
-            },
-            3 => { // Input
-                let a = get_param(1, 1);
-                if first_input_done {
-                    opcodes[a as usize] = input;
-                } else {
-                    first_input_done = true;
-                    opcodes[a as usize] = phase_settings;
-                }
-                pos += 2;
-            },
-            4 => { // Output
-                let a = get_param(1, mode(1));
-                out = Some(a);
-                pos += 2;
-            },
-            5 => { //jump-if-true
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                if a != 0 {
-                    pos = b as usize;
-                } else {
-                    pos += 3;
-                }
-            },
-            6 => { //jump-if-false
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                if a == 0 {
-                    pos = b as usize;
-                } else {
-                    pos += 3;
-                }
-            },
-            7 => { //less-than
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                opcodes[c as usize] = if a < b {1} else {0};
-                pos += 4;
-            },
-            8 => { //equals
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                opcodes[c as usize] = if a == b {1} else {0};
-                pos += 4;
-            },
-            99 => { // Exit
-                break
-            },
-            _ => { // Error
-                break
-            }
-        }
-    }
-    return out.unwrap();
-}
 
 // Part1
 pub fn part1 (input: &str) -> String {
@@ -230,9 +147,7 @@ pub fn part1 (input: &str) -> String {
     for permutation in (0..5).permutations(5) {
         let mut output = 0;
         for phase in permutation {
-            let mut amplifier = Amplifier::new(&opcodes);
-            amplifier.add_input(phase);
-            amplifier.add_input(output);
+            let mut amplifier = Amplifier::new(&opcodes, vec![phase, output]);
             match amplifier.run_until_interrupted() {
                 Status::Output(i) => output = i,
                 _ => {}
@@ -250,12 +165,29 @@ pub fn part2 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut max_output = 0;
     for permutation in (5..10).permutations(5) {
-        let mut output = 0;
-        for phase in permutation {
-            output = main_loop(opcodes.clone(), phase, output);
-        }
+        let mut amplifiers = vec![
+            Amplifier::new(&opcodes, vec![permutation[0]]),
+            Amplifier::new(&opcodes, vec![permutation[1]]),
+            Amplifier::new(&opcodes, vec![permutation[2]]),
+            Amplifier::new(&opcodes, vec![permutation[3]]),
+            Amplifier::new(&opcodes, vec![permutation[4]])
+        ];
 
-        max_output = cmp::max(max_output, output);
+        let mut last_output_signal = -1;
+        let mut output = 0;
+
+        for amplifier_id in (0..5).cycle() {
+            amplifiers[amplifier_id].add_input(output);
+            match amplifiers[amplifier_id].run_until_interrupted() {
+                Status::Output(out) => {
+                    if amplifier_id == 4 { last_output_signal = out; }
+                    output = out;
+                }
+                Status::Halt => { break },
+                _ => {}
+            }
+        };
+        max_output = cmp::max(max_output, last_output_signal);
     }
 
     format!("{}", max_output)
@@ -273,6 +205,7 @@ mod tests {
 
     #[test]
     fn day7_part2 () {
-        assert_eq!(super::part2("0"), "0");
+        assert_eq!(super::part2("3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5"), "139629729");
+        assert_eq!(super::part2("3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10"), "18216");
     }
 }
