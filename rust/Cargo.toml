@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 regex = "1"
 num = "0.2"
+itertools = "0.8.2"
