@@ -160,25 +160,33 @@ pub fn part1 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut amplifier = Amplifier::new(&opcodes);
     amplifier.add_input(1);
-    let mut res = String::new();
+    let mut res = None;
     loop {
         match amplifier.step() {
-            Status::Output(output) => res += &format!(",{}", output),
+            Status::Output(output) => res = Some(output),
             Status::Halt => break,
-            Status::Error(error) => return format!("Error: {}", error),
             _ => {}
         }
     }
 
-    res.remove(0);
-    res
-    // format!("{}", res.unwrap())
+    res.unwrap().to_string()
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    let _opcodes = read_input(input);
-    format!("{}", 0)
+    let opcodes = read_input(input);
+    let mut amplifier = Amplifier::new(&opcodes);
+    amplifier.add_input(2);
+    let mut res = None;
+    loop {
+        match amplifier.step() {
+            Status::Output(output) => res = Some(output),
+            Status::Halt => break,
+            _ => {}
+        }
+    }
+
+    res.unwrap().to_string()
 }
 
 // Tests
