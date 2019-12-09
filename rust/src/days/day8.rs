@@ -1,10 +1,5 @@
 use itertools::Itertools;
 
-// Helper
-fn read_input (_input: &str) -> i32 {
-    0
-}
-
 // Part1
 pub fn part1 (input: &str) -> String {
     let nb_pixel = 25 * 6;
@@ -34,7 +29,28 @@ pub fn part1 (input: &str) -> String {
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    format!("{}", read_input(input))
+    let width = 25;
+    let height = 6;
+    let nb_pixel = width * height;
+    let nb_layer = input.len() / nb_pixel;
+
+    let chars: Vec<char> = input.chars().collect();
+    let mut out = String::new();
+
+    for y in 0..height {
+        for x in 0..width {
+            for layer_index in 0..nb_layer {
+                match chars[layer_index * nb_pixel + y * width + x] {
+                    '0' => {out += " "; break},
+                    '1' => {out += "#"; break},
+                    _   => {}
+                }
+            }
+        }
+        out += "\n";
+    }
+
+    out
 }
 
 // Tests
@@ -42,7 +58,7 @@ pub fn part2 (input: &str) -> String {
 mod tests {
     #[test]
     fn day8_part1 () {
-        assert_eq!(super::part1("1234567890120"), "0");
+        assert_eq!(super::part1("0"), "0");
     }
 
     #[test]
