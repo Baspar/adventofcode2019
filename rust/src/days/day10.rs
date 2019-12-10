@@ -67,13 +67,12 @@ fn get_best_asteroid (asteroids: &Coords) -> (i64, Coord) {
 pub fn part1 (input: &str) -> String {
     let asteroids = read_input(input);
     let (max, _) = get_best_asteroid(&asteroids);
-    format!("{:?}", max)
+    format!("{}", max)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
     let asteroids = read_input(input);
-
     let (_, base) = get_best_asteroid(&asteroids);
 
     let mut relative_positions: HashMap<Angle, Vec<(i64, Coord)>> = HashMap::new();
