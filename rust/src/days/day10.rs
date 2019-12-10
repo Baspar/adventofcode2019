@@ -47,6 +47,7 @@ pub fn part1 (input: &str) -> String {
         let mut current = asteroid_to.clone();
         while { current += step; current != *asteroid_from } {
             if asteroids_set.contains(&current) {
+            if asteroids_set.contains(&(asteroid_to + i * step)) {
                 continue 'combination_loop;
             }
         }
@@ -57,13 +58,35 @@ pub fn part1 (input: &str) -> String {
 
     let max = nb_reachable.values().fold(0, |v1, &v2| std::cmp::max(v1, v2));
     format!("{:?}", max)
-    // format!("{:?}", nb_reachable)
-    // format!("{:?}", 0)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    format!("{}", 0)
+    let asteroids = read_input(input);
+    let mut asteroids_set = HashSet::new();
+    for asteroid in &asteroids {
+        asteroids_set.insert(asteroid);
+    }
+    let mut nb_reachable: HashMap<Coord, i64> = HashMap::new();
+
+    'combination_loop: for perm in asteroids.iter().combinations(2) {
+        let (asteroid_from, asteroid_to) = (perm[0], perm[1]);
+        let distance = asteroid_from - asteroid_to;
+        let gcd = gcd(distance.re.abs(), distance.im.abs());
+        let step = distance / gcd;
+
+        for i in 1..gcd {
+            if asteroids_set.contains(&(asteroid_to + i * step)) {
+                continue 'combination_loop;
+            }
+        }
+
+        *nb_reachable.entry(*asteroid_from).or_insert(0) += 1;
+        *nb_reachable.entry(*asteroid_to).or_insert(0) += 1;
+    }
+
+    let max = nb_reachable.values().fold(0, |v1, &v2| std::cmp::max(v1, v2));
+    format!("{:?}", max)
 }
 
 // Tests
