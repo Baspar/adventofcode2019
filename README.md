@@ -4,7 +4,6 @@
     Advent of Code 2019
     <span style="font-size: 50px">🎄</span>
     </h1>
-    <div><b><a href="https://github.com/Baspar/adventofcode2019/tree/master/rust">Rust</a></b></div>
 </div>
 
 <br />
