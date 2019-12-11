@@ -13,12 +13,15 @@ fn read_input (input: &str) -> Vec<i64> {
 pub fn part1 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut machine = Machine::new(&opcodes).add_input(1);
+    let mut out = None;
     loop {
         match machine.step() {
-            Status::Output(o) => return format!("{}", o),
+            Status::Output(o) => out = Some(o),
+            Status::Halt => break,
             _ => {}
         }
     }
+    format!("{}", out.unwrap())
 }
 
 // Part2
