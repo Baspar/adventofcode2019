@@ -179,7 +179,6 @@ pub fn part1 (input: &str) -> String {
             }
         }
         map.insert(pos.clone(), color.unwrap());
-        // println!("pos {} ({}, {}) => ", pos, color.unwrap(), rotation.unwrap());
         orientation *= if rotation.unwrap() == 1 { Complex::new(0, 1) } else { Complex::new(0, -1) };
         pos += orientation;
     }
@@ -188,8 +187,56 @@ pub fn part1 (input: &str) -> String {
 
 // Part2
 pub fn part2 (input: &str) -> String {
-    let _ = read_input(input);
-    format!("{}", 0)
+    let opcodes = read_input(input);
+    let mut machine = Machine::new(&opcodes);
+    let mut map = HashMap::<Complex<Int>, Int>::new();
+    let mut pos = Complex::new(0, 0);
+    let mut orientation = Complex::new(0, -1);
+    map.insert(pos.clone(), 1);
+    'main_loop: loop {
+        let current_color = map.get(&pos).unwrap_or(&0);
+        machine.add_input(current_color.clone());
+
+        let mut color = None;
+        let mut rotation = None;
+        while color.is_none() || rotation.is_none() {
+            match machine.step() {
+                Status::Output(o) => {
+                    if color.is_none() {
+                        color = Some(o);
+                    } else {
+                        rotation = Some(o);
+                    }
+                },
+                Status::Halt      => break 'main_loop,
+                Status::Ok        => {},
+                err               => panic!("Received a state {:?}", err)
+            }
+        }
+        map.insert(pos.clone(), color.unwrap());
+        orientation *= if rotation.unwrap() == 1 { Complex::new(0, 1) } else { Complex::new(0, -1) };
+        pos += orientation;
+    }
+
+    let (min_x, max_x, min_y, max_y) = map
+        .keys()
+        .fold((i64::max_value(), 0, i64::max_value(), 0), |(min_x, max_x, min_y, max_y), a| (
+                std::cmp::min(min_x, a.re),
+                std::cmp::max(max_x, a.re),
+                std::cmp::min(min_y, a.im),
+                std::cmp::max(max_y, a.im)
+        ));
+
+    println!("");
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            let pos = Complex::new(x, y);
+            let color = map.get(&pos).unwrap_or(&0);
+            print!("{}", if *color == 1 { '#' } else { ' ' });
+        }
+        println!("");
+    }
+    format!("{}", map.len())
 }
 
 // Tests
