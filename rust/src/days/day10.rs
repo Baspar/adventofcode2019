@@ -1,11 +1,31 @@
-use std::collections::{HashSet,HashMap};
+use std::collections::{HashSet,HashMap,BTreeMap};
 use itertools::Itertools;
 use num::Complex;
+use std::cmp::Ordering;
 
 // Helper
 type Coord = Complex<i64>;
-type Angle = Coord;
+struct Angle(Complex<i64>);
 type Coords = Vec<Coord>;
+
+impl Ord for Angle {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_angle = Complex::new(self.0.im as f64, self.0.re as f64).arg();
+        let other_angle = Complex::new(other.0.im as f64, other.0.re as f64).arg();
+        other_angle.partial_cmp(&self_angle).unwrap_or(Ordering::Equal)
+    }
+}
+impl PartialOrd for Angle {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl PartialEq for Angle {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for Angle { }
 
 fn read_input (input: &str) -> Coords {
     let mut out = Vec::new();
@@ -75,12 +95,13 @@ pub fn part2 (input: &str) -> String {
     let asteroids = read_input(input);
     let (_, base) = get_best_asteroid(&asteroids);
 
-    let mut relative_positions: HashMap<Angle, Vec<(i64, Coord)>> = HashMap::new();
+    // Building Btree indexed by "angle", sorted clockwise from UP
+    let mut relative_positions: BTreeMap<Angle, Vec<(i64, Coord)>> = BTreeMap::new();
     for asteroid in asteroids {
         if asteroid != base {
             let distance = asteroid - base;
             let divider = gcd(distance.re.abs(), distance.im.abs());
-            let step = distance / divider;
+            let step = Angle (distance / divider);
 
             relative_positions
                 .entry(step).or_insert(Vec::new())
@@ -88,25 +109,23 @@ pub fn part2 (input: &str) -> String {
         }
     }
 
-    let mut sorted_horizons: Vec<(f64, Coords)> = Vec::new();
-    for (Complex {re, im}, mut aligned_position) in relative_positions {
-        let angle = Complex::new(im as f64, re as f64).arg();
-        aligned_position.sort_by_key(|(distance, _)| distance.abs());
-        aligned_position.reverse();
-        let aligned_asteroids: Coords = aligned_position.iter().map(|(_, coord)| *coord).collect();
-        sorted_horizons.push((angle, aligned_asteroids));
-    }
-    sorted_horizons.sort_by(|(angle_a, _), (angle_b, _)| angle_b.partial_cmp(&angle_a).unwrap_or(std::cmp::Ordering::Equal));
-
-    let mut coords: Vec<Coords> = sorted_horizons.iter().map(|(_, coords)| coords.clone()).collect();
+    // Sort every asteroid in line according to distance on the line of view
+    let mut relative_positions: Vec<Vec<(i64, Coord)>> = relative_positions
+        .values()
+        .map(|asteroids_in_line| {
+            let mut asteroids_in_line = asteroids_in_line.clone();
+            asteroids_in_line.sort_by_key(|asteroids_in_line| asteroids_in_line.0);
+            asteroids_in_line
+        })
+        .collect();
 
     let mut i = 0;
-    while !coords.is_empty() {
-        let index = i % coords.len();
+    while !relative_positions.is_empty() {
+        let index = i % relative_positions.len();
 
-        match coords[index].pop() {
-            None => { coords.remove(index); },
-            Some(coord) => {
+        match relative_positions[index].pop() {
+            None => { relative_positions.remove(index); },
+            Some((_, coord)) => {
                 if i == 199 {
                     return format!("{}", 100 * coord.re + coord.im);
                 }
@@ -115,7 +134,7 @@ pub fn part2 (input: &str) -> String {
         }
 
     }
-    format!("{}", 1)
+    format!("{}", -1)
 }
 
 // Tests
