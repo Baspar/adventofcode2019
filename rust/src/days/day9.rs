@@ -20,32 +20,34 @@ fn read_input (input: &str) -> Opcodes {
 pub fn part1 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut amplifier = Machine::new(&opcodes).add_input(1);
-    let mut res = None;
+    let mut res = String::new();
     loop {
         match amplifier.step() {
-            Status::Output(output) => res = Some(output),
+            Status::Output(output) => res += &format!("{},", output),
             Status::Halt => break,
             _ => {}
         }
     }
 
-    res.unwrap().to_string()
+    res.pop();
+    res
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut amplifier = Machine::new(&opcodes).add_input(2);
-    let mut res = None;
+    let mut res = String::new();
     loop {
         match amplifier.step() {
-            Status::Output(output) => res = Some(output),
+            Status::Output(output) => res += &format!("{},", output),
             Status::Halt => break,
             _ => {}
         }
     }
 
-    res.unwrap().to_string()
+    res.pop();
+    res
 }
 
 // Tests
