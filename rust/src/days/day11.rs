@@ -89,16 +89,16 @@ pub fn part2 (input: &str) -> String {
                 std::cmp::max(max_y, a.im)
         ));
 
-    println!("");
+    let mut out = String::new();
     for y in min_y..=max_y {
         for x in min_x..=max_x {
             let pos = Complex::new(x, y);
             let color = map.get(&pos).unwrap_or(&0);
-            print!("{}", if *color == 1 { '#' } else { ' ' });
+            out += if *color == 1 { "#" } else { " " };
         }
-        println!("");
+        out += "\n";
     }
-    format!("{}", map.len())
+    format!("{}", out)
 }
 
 // Tests
@@ -108,24 +108,39 @@ mod tests {
     fn day11_part1 () {
         assert_eq!(super::part1("
                 3, 98,
-                4, 1, 4, 0,
+                104, 1, 104, 0,
                 3, 98,
-                4, 0, 4, 0,
+                104, 0, 104, 0,
                 3, 98,
-                4, 1, 4, 0,
+                104, 1, 104, 0,
                 3, 98,
-                4, 1, 4, 0,
+                104, 1, 104, 0,
                 3, 98,
-                4, 0, 4, 1,
+                104, 0, 104, 1,
                 3, 98,
-                4, 1, 4, 0,
+                104, 1, 104, 0,
                 3, 98,
-                4, 1, 4, 0,
-                99"), "0");
+                104, 1, 104, 0,
+                99"), "6");
     }
 
     #[test]
     fn day11_part2 () {
-        assert_eq!(super::part2("0"), "0");
+        assert_eq!(super::part2("
+                3, 98,
+                104, 1, 104, 0,
+                3, 98,
+                104, 0, 104, 0,
+                3, 98,
+                104, 1, 104, 0,
+                3, 98,
+                104, 1, 104, 0,
+                3, 98,
+                104, 0, 104, 1,
+                3, 98,
+                104, 1, 104, 0,
+                3, 98,
+                104, 1, 104, 0,
+                99"), "  #\n  #\n## \n");
     }
 }
