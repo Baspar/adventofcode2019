@@ -1,132 +1,6 @@
 use itertools::Itertools;
-use std::collections::VecDeque;
 use std::cmp;
-
-type Opcodes = Vec<i64>;
-
-enum Status {
-    Ok,
-    Output(i64),
-    WaitingForInput,
-    Halt
-}
-
-#[derive(Debug)]
-struct Amplifier {
-    pos: usize,
-    opcodes: Opcodes,
-    input: VecDeque<i64>
-}
-impl Amplifier {
-    fn new (opcodes: &Opcodes, inputs: Vec<i64>) -> Self {
-        let mut input = VecDeque::new();
-        for i in inputs {
-            input.push_back(i);
-        }
-        Self {
-            pos: 0,
-            opcodes: opcodes.clone(),
-            input
-        }
-    }
-    fn add_input (self: &mut Self, i: i64) {
-        self.input.push_back(i);
-    }
-    fn step (self: &mut Self) -> Status {
-        let mode = |shift: u32| {
-            self.opcodes[self.pos] / 10i64.pow(shift + 1) % 10
-        };
-        let get_param = |shift: u32, mode| -> i64 {
-            let value = self.opcodes[self.pos + shift as usize];
-            if mode == 0 {
-                return self.opcodes[value as usize];
-            } else {
-                return value;
-            }
-        };
-        match self.opcodes[self.pos] % 100 {
-            1 => { // Addition
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                self.opcodes[c as usize] = a + b;
-                self.pos += 4;
-            },
-            2 => { // Multiplication
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                self.opcodes[c as usize] = a * b;
-                self.pos += 4;
-            },
-            3 => { // Input
-                let a = get_param(1, 1);
-                if self.input.is_empty() {
-                    return Status::WaitingForInput;
-                }
-
-                self.opcodes[a as usize] = self.input.pop_front().unwrap();
-
-                self.pos += 2;
-            },
-            4 => { // Output
-                let a = get_param(1, mode(1));
-                self.pos += 2;
-                return Status::Output(a)
-            },
-            5 => { //jump-if-true
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                if a != 0 {
-                    self.pos = b as usize;
-                } else {
-                    self.pos += 3;
-                }
-            },
-            6 => { //jump-if-false
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                if a == 0 {
-                    self.pos = b as usize;
-                } else {
-                    self.pos += 3;
-                }
-            },
-            7 => { //less-than
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                self.opcodes[c as usize] = if a < b {1} else {0};
-                self.pos += 4;
-            },
-            8 => { //equals
-                let a = get_param(1, mode(1));
-                let b = get_param(2, mode(2));
-                let c = get_param(3, 1);
-                self.opcodes[c as usize] = if a == b {1} else {0};
-                self.pos += 4;
-            },
-            99 => { // Exit
-                return Status::Halt;
-            },
-            _ => { // Error
-                return Status::Halt;
-            }
-        }
-
-        Status::Ok
-    }
-    fn run_until_interrupted (self: &mut Self) -> Status {
-        loop {
-            match self.step() {
-                Status::Ok => {}
-                Status::Output(i) => { return Status::Output(i) }
-                Status::WaitingForInput => { return Status::WaitingForInput }
-                Status::Halt => { return Status::Halt }
-            }
-        }
-    }
-}
+use crate::intcode::{Status,Machine};
 
 // Helper
 fn read_input (input: &str) -> Vec<i64> {
@@ -147,8 +21,10 @@ pub fn part1 (input: &str) -> String {
     for permutation in (0..5).permutations(5) {
         let mut output = 0;
         for phase in permutation {
-            let mut amplifier = Amplifier::new(&opcodes, vec![phase, output]);
-            match amplifier.run_until_interrupted() {
+            let mut machine = Machine::new(&opcodes)
+                .add_input(phase)
+                .add_input(output);
+            match machine.run_until_interrupted() {
                 Status::Output(i) => output = i,
                 _ => {}
             }
@@ -165,22 +41,22 @@ pub fn part2 (input: &str) -> String {
     let opcodes = read_input(input);
     let mut max_output = 0;
     for permutation in (5..10).permutations(5) {
-        let mut amplifiers = vec![
-            Amplifier::new(&opcodes, vec![permutation[0]]),
-            Amplifier::new(&opcodes, vec![permutation[1]]),
-            Amplifier::new(&opcodes, vec![permutation[2]]),
-            Amplifier::new(&opcodes, vec![permutation[3]]),
-            Amplifier::new(&opcodes, vec![permutation[4]])
+        let mut machines = vec![
+            Machine::new(&opcodes).add_input(permutation[0]),
+            Machine::new(&opcodes).add_input(permutation[1]),
+            Machine::new(&opcodes).add_input(permutation[2]),
+            Machine::new(&opcodes).add_input(permutation[3]),
+            Machine::new(&opcodes).add_input(permutation[4])
         ];
 
         let mut last_output_signal = -1;
         let mut output = 0;
 
-        for amplifier_id in (0..5).cycle() {
-            amplifiers[amplifier_id].add_input(output);
-            match amplifiers[amplifier_id].run_until_interrupted() {
+        for machine_id in (0..5).cycle() {
+            machines[machine_id].add_input_mut(output);
+            match machines[machine_id].run_until_interrupted() {
                 Status::Output(out) => {
-                    if amplifier_id == 4 { last_output_signal = out; }
+                    if machine_id == 4 { last_output_signal = out; }
                     output = out;
                 }
                 Status::Halt => { break },

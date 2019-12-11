@@ -5,6 +5,7 @@ use regex::Regex;
 use std::time::Instant;
 
 mod days;
+mod intcode;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
