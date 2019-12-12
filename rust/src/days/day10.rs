@@ -1,6 +1,7 @@
 use std::collections::{HashSet,HashMap,BTreeMap};
 use itertools::Itertools;
 use num::Complex;
+use num::integer::gcd;
 use std::cmp::Ordering;
 
 // Helper
@@ -38,16 +39,6 @@ fn read_input (input: &str) -> Coords {
         }
     }
     out
-}
-fn gcd(x: i64, y: i64) -> i64 {
-    let mut x = x;
-    let mut y = y;
-    while y != 0 {
-        let t = y;
-        y = x % y;
-        x = t;
-    }
-    x
 }
 fn get_best_asteroid (asteroids: &Coords) -> (i64, Coord) {
     let mut asteroids_set = HashSet::new();
