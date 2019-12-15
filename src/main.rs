@@ -25,7 +25,7 @@ fn main() {
     }
 
     // Load file
-    let filename: String = format!("../inputs/{}.txt", day);
+    let filename: String = format!("./inputs/{}.txt", day);
     println!("{}", filename);
     let file_input = fs::read_to_string(filename).expect("cannot read file");
 

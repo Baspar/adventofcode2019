@@ -1,5 +1,9 @@
+use regex::Regex;
+
 // Helper
-fn read_input (_input: &str) -> i32 {
+fn read_input (input: &str) -> i32 {
+    let params: Vec<Vec<&str>> = input.split(" => ").map(|s: &str| s.trim().split(",").map(|s| s.trim()).collect()).collect();
+    // let re = Regex::new(r"")
     0
 }
 
