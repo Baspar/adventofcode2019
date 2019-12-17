@@ -1,11 +1,12 @@
-use std::collections::{HashMap,VecDeque};
+use std::collections::{HashMap,HashSet,VecDeque};
 use num::Complex;
 use crate::intcode::{Opcodes,Status,Machine};
 
 #[derive(Debug)]
 enum Cell {
     Empty,
-    Wall
+    Wall,
+    Oxygen
 }
 
 type Position = Complex<i64>;
@@ -52,7 +53,7 @@ impl Maze {
                     return Some(new_position);
                 },
                 Status::Output(2) => {
-                    self.map.insert(new_position, Cell::Empty);
+                    self.map.insert(new_position, Cell::Oxygen);
                     self.position = new_position;
                     self.backtrack.push_front(backtrack_inputs[i]);
                     self.oxygen_position = Some(new_position);
@@ -66,6 +67,26 @@ impl Maze {
 
     pub fn cannot_backtrack (self: &Self) -> bool {
         self.backtrack.is_empty()
+    }
+
+    pub fn shortest_path (self: &Self) -> Option<i64> {
+        let mut q = VecDeque::new();
+        let mut visited = HashSet::new();
+        q.push_back((0, Complex::new(0, 0)));
+        while !q.is_empty() {
+            let (distance, pos) = q.pop_front().unwrap();
+            if visited.contains(&pos) { continue }
+            visited.insert(pos);
+            for direction in &[Complex::new(1, 0), Complex::new(-1, 0), Complex::new(0, 1), Complex::new(0, -1)] {
+                let new_pos = pos + direction;
+                match self.map.get(&new_pos) {
+                    Some(Cell::Empty) => { q.push_back((distance + 1, new_pos)); },
+                    Some(Cell::Oxygen) => { return Some(distance + 1) },
+                    _ => {}
+                }
+            }
+        }
+        None
     }
 
     pub fn backtrack (self: &mut Self) {
@@ -87,6 +108,36 @@ impl Maze {
         }
 
         self.position += movement;
+    }
+    pub fn display (self: &Self) {
+        let (min_x, max_x, min_y, max_y) = self.map
+            .keys()
+            .fold(
+                (i64::max_value(), 0, i64::max_value(), 0),
+                |(min_x, max_x, min_y, max_y), pos| (
+                    min_x.min(pos.re),
+                    max_x.max(pos.re),
+                    min_y.min(pos.im),
+                    max_y.max(pos.im)
+                ));
+
+        for y in min_y..=max_y {
+            println!("");
+            for x in min_x..=max_x {
+                let pos = Complex::new(x, y);
+                let c = if pos == Complex::new(0, 0) {
+                    "0"
+                } else {
+                    match self.map.get(&pos) {
+                        Some(Cell::Oxygen) => "*",
+                        Some(Cell::Empty) => " ",
+                        Some(Cell::Wall) => "#",
+                        _ => "."
+                    }
+                };
+                print!("{}", c);
+            }
+        }
     }
 }
 
@@ -116,36 +167,9 @@ pub fn part1 (input: &str) -> String {
         map.backtrack();
     }
 
-    let (min_x, max_x, min_y, max_y) = map
-        .map
-        .keys()
-        .fold(
-            (i64::max_value(), 0, i64::max_value(), 0),
-            |(min_x, max_x, min_y, max_y), pos| (
-                min_x.min(pos.re),
-                max_x.max(pos.re),
-                min_y.min(pos.im),
-                max_y.max(pos.im)
-            ));
+    map.display();
 
-    for y in min_y..=max_y {
-        println!("");
-        for x in min_x..=max_x {
-            let pos = Complex::new(x, y);
-            if pos == Complex::new(0, 0) {
-                print!("0");
-            } else if pos == map.oxygen_position.unwrap() {
-                print!("*");
-            } else {
-                match map.map.get(&pos) {
-                    Some(Cell::Empty) => print!(" "),
-                    Some(Cell::Wall) => print!("#"),
-                    _ => print!(".")
-                }
-            }
-        }
-    }
-    format!("{}", 0)
+    format!("{}", map.shortest_path().unwrap())
 }
 
 // Part2
