@@ -89,6 +89,27 @@ impl Maze {
         None
     }
 
+    pub fn fill_up (self: &Self) -> i64 {
+        let mut q = VecDeque::new();
+        let mut visited = HashSet::new();
+        let mut max_distance = 0;
+        q.push_back((0, self.oxygen_position.unwrap()));
+        while !q.is_empty() {
+            let (distance, pos) = q.pop_front().unwrap();
+            if visited.contains(&pos) { continue }
+            max_distance = max_distance.max(distance);
+            visited.insert(pos);
+            for direction in &[Complex::new(1, 0), Complex::new(-1, 0), Complex::new(0, 1), Complex::new(0, -1)] {
+                let new_pos = pos + direction;
+                match self.map.get(&new_pos) {
+                    Some(Cell::Empty) => { q.push_back((distance + 1, new_pos)); },
+                    _ => {}
+                }
+            }
+        }
+        return max_distance;
+    }
+
     pub fn backtrack (self: &mut Self) {
         let backtrack_input = self.backtrack.pop_front().expect("Cannot backtrack anymore");
         let movement = match backtrack_input {
@@ -175,9 +196,19 @@ pub fn part1 (input: &str) -> String {
 // Part2
 pub fn part2 (input: &str) -> String {
     let opcodes = read_input(input);
-    let mut machine = Machine::new(&opcodes);
-    machine.step();
-    format!("{}", 0)
+    let machine = Machine::new(&opcodes);
+    let mut map = Maze::new(machine);
+    loop {
+        while map.explore().is_some() { }
+
+        if map.cannot_backtrack() {
+            break;
+        }
+
+        map.backtrack();
+    }
+
+    format!("{}", map.fill_up())
 }
 
 // Tests
