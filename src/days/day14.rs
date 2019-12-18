@@ -106,10 +106,12 @@ pub fn part2 (input: &str) -> String {
     let mut leftovers_ore = 1_000_000_000_000;
     let mut nb_fuel = 0;
     loop {
-        let estimation = leftovers_ore / cost_for_1_fuel;
-        if estimation == 0 { break }
+        let estimation = (leftovers_ore / cost_for_1_fuel).max(1);
 
-        let reality = recipe_book.run(estimation).ore_needed;
+        recipe_book.run(estimation);
+        let reality = recipe_book.ore_needed;
+
+        if reality > 1_000_000_000_000 { break }
 
         nb_fuel += estimation;
         leftovers_ore = 1_000_000_000_000 - reality;
