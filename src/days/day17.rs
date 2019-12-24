@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use regex::Regex;
 use num::Complex;
 use crate::intcode::{Opcodes,Status,Machine};
 
@@ -148,7 +149,32 @@ impl Map {
 
         out
             .iter()
-            .fold(String::from(""), |a, b| a + b + ",")
+            .fold(String::from(""), |a, b| a + b)
+    }
+}
+struct CompressedPath {
+    A: Vec<String>,
+    B: Vec<String>,
+    C: Vec<String>,
+    routine: Vec<String>
+}
+fn compress_path (path: &String) -> CompressedPath {
+    let mut A = Vec::new();
+    let mut B = Vec::new();
+    let mut C = Vec::new();
+    let mut routine = Vec::new();
+    let cap = Regex::new(r"^(.{1,21})\1*(.{1,21})(?:\1|\2)*(.{2,21})(?:\1|\2|\3)*$")
+        .unwrap()
+        .captures(path)
+        .unwrap() ;
+    println!("A: {:?}", &cap[0]);
+    println!("B: {:?}", &cap[1]);
+    println!("C: {:?}", &cap[2]);
+    CompressedPath {
+        A,
+        B,
+        C,
+        routine
     }
 }
 
@@ -179,6 +205,8 @@ pub fn part2 (input: &str) -> String {
     let mut map = Map::new(Machine::new(&opcodes));
     map.display();
     let instructions = map.get_instruction();
+    println!("instructions: {:?}", instructions);
+    compress_path(&instructions);
 
     format!("{}", 0)
 }
