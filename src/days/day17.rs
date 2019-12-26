@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use regex::Regex;
+use onig::{Regex,Captures};
 use num::Complex;
 use crate::intcode::{Opcodes,Status,Machine};
 
@@ -18,7 +18,8 @@ struct Map {
     bot_orientation: Complex<i64>,
     max_x: i64,
     max_y: i64,
-    map: HashMap<Complex<i64>, char>
+    map: HashMap<Complex<i64>, char>,
+    machine: Machine
 }
 impl Map {
     fn new (mut machine: Machine) -> Self {
@@ -30,6 +31,7 @@ impl Map {
         let mut bot_orientation = Complex::new(0, 0);
         loop {
             match machine.step() {
+                Status::WaitingForInput => break,
                 Status::Halt => break,
                 Status::Output(10) => {
                     pos.re = 0;
@@ -74,7 +76,8 @@ impl Map {
             max_y,
             max_x,
             bot_orientation,
-            bot_pos
+            bot_pos,
+            machine
         }
     }
 
@@ -143,37 +146,77 @@ impl Map {
             }
 
             out.push(i.to_string());
-
-            self.display()
         }
 
         out
             .iter()
-            .fold(String::from(""), |a, b| a + b)
+            .fold(String::from(""), |a, b| a + b + ",")
+    }
+
+    fn feed_routine(self: &mut Self, CompressedPath {a, b, c, routine}: CompressedPath) {
+        for c in routine.chars() {
+            self.machine.add_input_mut(c as u8 as i64);
+        }
+        self.machine.add_input_mut(10);
+
+        for c in a.chars() {
+            self.machine.add_input_mut(c as u8 as i64);
+        }
+        self.machine.add_input_mut(10);
+        for c in b.chars() {
+            self.machine.add_input_mut(c as u8 as i64);
+        }
+        self.machine.add_input_mut(10);
+        for c in c.chars() {
+            self.machine.add_input_mut(c as u8 as i64);
+        }
+        self.machine.add_input_mut(10);
     }
 }
 struct CompressedPath {
-    A: Vec<String>,
-    B: Vec<String>,
-    C: Vec<String>,
-    routine: Vec<String>
+    a: String,
+    b: String,
+    c: String,
+    routine: String
 }
 fn compress_path (path: &String) -> CompressedPath {
-    let mut A = Vec::new();
-    let mut B = Vec::new();
-    let mut C = Vec::new();
-    let mut routine = Vec::new();
-    let cap = Regex::new(r"^(.{1,21})\1*(.{1,21})(?:\1|\2)*(.{2,21})(?:\1|\2|\3)*$")
+    let caps = Regex::new(r"^(.{1,21})\1*(.{1,21})(?:\1|\2)*(.{1,21})(?:\1|\2|\3)*$")
         .unwrap()
         .captures(path)
-        .unwrap() ;
-    println!("A: {:?}", &cap[0]);
-    println!("B: {:?}", &cap[1]);
-    println!("C: {:?}", &cap[2]);
+        .unwrap();
+
+    let out: Vec<String> = caps
+        .iter()
+        .map(|cap| {
+            let mut s = cap.unwrap().to_string();
+            s.pop();
+            s
+        })
+        .collect();
+
+    let a = out[1].clone();
+    let b = out[2].clone();
+    let c = out[3].clone();
+
+    let mut routine_string = path.clone();
+    for (letter, cap) in [("A", &a), ("B", &b), ("C", &c)].iter() {
+        routine_string = Regex::new(cap).unwrap().replace_all(&routine_string, |_: &Captures| format!("{}", letter));
+    }
+    routine_string.pop();
+    let routine = routine_string
+        .chars()
+        .map(|c| format!("{}", c))
+        .collect();
+
+    println!("A: {:?}", a);
+    println!("B: {:?}", b);
+    println!("C: {:?}", c);
+    println!("out: {:?}", routine);
+
     CompressedPath {
-        A,
-        B,
-        C,
+        a,
+        b,
+        c,
         routine
     }
 }
@@ -192,21 +235,17 @@ pub fn part1 (input: &str) -> String {
 pub fn part2 (input: &str) -> String {
     let mut opcodes = read_input(input);
     // opcodes[0] = 2;
-    // R12L8L4L4L8R6L6
-    // R12L8L4L4L8R6L6
-    // L8L4R12L6L4R12L8L4L4
-    // L8L4R12L6L4R12L8L4L4
-    // L8L4R12L6L4L8R6L6
-    //
-    // R12L8L4L4L8R6L6
-    // L8L4R12L6L4R12L8L4L4
-    // L8L4R12L6L4L8R6L6
 
     let mut map = Map::new(Machine::new(&opcodes));
-    map.display();
+    // map.display();
     let instructions = map.get_instruction();
-    println!("instructions: {:?}", instructions);
-    compress_path(&instructions);
+    let routine = compress_path(&instructions);
+
+    map.feed_routine(routine);
+
+    match map.machine.run_until_interrupted() {
+        err => println!("{:?}", err)
+    }
 
     format!("{}", 0)
 }
