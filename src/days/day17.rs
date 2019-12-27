@@ -102,22 +102,6 @@ impl Map {
         }
     }
 
-    fn part1 (self: &Self) -> i64 {
-        let mut out = 0;
-        for (Complex {re: x, im: y}, c) in &self.map {
-            if *c == '.' { continue }
-            if
-                self.map.get(&Complex::new(*x + 1, *y)) == Some(&'#') &&
-                self.map.get(&Complex::new(*x - 1, *y)) == Some(&'#') &&
-                self.map.get(&Complex::new(*x, *y + 1)) == Some(&'#') &&
-                self.map.get(&Complex::new(*x, *y - 1)) == Some(&'#')
-            {
-                out += x * y
-            }
-        }
-        out
-    }
-
     fn get_instruction (self: &mut Self) -> String {
         let mut out = Vec::new();
         loop {
@@ -154,23 +138,20 @@ impl Map {
     }
 
     fn feed_routine(self: &mut Self, CompressedPath {a, b, c, routine}: CompressedPath) {
-        for c in routine.chars() {
-            self.machine.add_input_mut(c as u8 as i64);
-        }
-        self.machine.add_input_mut(10);
+        for string in &[routine, a, b, c, String::from("n")] {
+            loop {
+                match self.machine.run_until_interrupted() {
+                    Status::Output(o) => print!("{}", o as u8 as char),
+                    Status::WaitingForInput => break,
+                    err => panic!("{:?}", err)
+                }
+            }
 
-        for c in a.chars() {
-            self.machine.add_input_mut(c as u8 as i64);
+            for c in string.chars() {
+                self.machine.add_input_mut(c as u8 as i64);
+            }
+            self.machine.add_input_mut(10);
         }
-        self.machine.add_input_mut(10);
-        for c in b.chars() {
-            self.machine.add_input_mut(c as u8 as i64);
-        }
-        self.machine.add_input_mut(10);
-        for c in c.chars() {
-            self.machine.add_input_mut(c as u8 as i64);
-        }
-        self.machine.add_input_mut(10);
     }
 }
 struct CompressedPath {
@@ -228,26 +209,47 @@ pub fn part1 (input: &str) -> String {
     let map = Map::new(Machine::new(&opcodes));
 
     // map.display();
-    format!("{}", map.part1())
+
+    let mut out = 0;
+    for (Complex {re: x, im: y}, c) in &map.map {
+        if *c == '.' { continue }
+        if
+            map.map.get(&Complex::new(*x + 1, *y)) == Some(&'#') &&
+            map.map.get(&Complex::new(*x - 1, *y)) == Some(&'#') &&
+            map.map.get(&Complex::new(*x, *y + 1)) == Some(&'#') &&
+            map.map.get(&Complex::new(*x, *y - 1)) == Some(&'#')
+        {
+            out += x * y
+        }
+    }
+    format!("{}", out)
 }
 
 // Part2
 pub fn part2 (input: &str) -> String {
     let mut opcodes = read_input(input);
-    // opcodes[0] = 2;
+    opcodes[0] = 2;
 
     let mut map = Map::new(Machine::new(&opcodes));
+
     // map.display();
+
     let instructions = map.get_instruction();
     let routine = compress_path(&instructions);
 
     map.feed_routine(routine);
 
-    match map.machine.run_until_interrupted() {
-        err => println!("{:?}", err)
+    let mut out = None;
+    loop {
+        match map.machine.run_until_interrupted() {
+            Status::Output(o) => out = Some(o),
+            Status::Halt => break,
+            err => panic!("{:?}", err)
+        }
     }
 
-    format!("{}", 0)
+
+    format!("{}", out.unwrap())
 }
 
 // Tests
